@@ -278,7 +278,9 @@ def draw_world(screen: pg.surface, world: list[list[Block]]) -> None:
 			block_color = world[r][c].color
 			border = world[r][c].border
 			radiuses = world[r][c].border_radius
-			pg.draw.rect(screen,
+
+			pg.draw.rect(
+				screen,
 				color=block_color,
 				rect=block,
 				width=border,
