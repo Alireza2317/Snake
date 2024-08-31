@@ -226,20 +226,26 @@ class SnakeGame:
 		self.clock = pg.time.Clock()
 
 		self.font = pg.font.Font(FONT_FILE, FONT_SIZE)
-		self.score = self.font.render('', True, 'white')
 
+		self.score: int = 0
+		self.fps = FPS
+		self.game_over = False
+		self.num_foods = NUM_FOODS
+		
+		# will initialize self.world, self.snake, self.foods
+		self.reset()
+
+	def reset(self) -> None:
 		self.world: list[list[Block]] = [
 			[None for col in range(WN)] for row in range(HN)
 		]
 
-		self.fps = FPS
-		self.game_over = False
 		self.snake = Snake(init_size=INITIAL_SIZE)
+		
 		self.foods: list[Position] = []
-		self.num_foods = NUM_FOODS
 		self.generate_foods()
-		self.update_world()
 
+		self.update_world()
 
 	def calc_border_radiuses(self) -> tuple[int, int, int, int]:
 		direction = self.snake.direction
@@ -415,8 +421,10 @@ class SnakeGame:
 			if self.snake.ate_food(food_pos=food):
 				if INCREMENT_SPEED: self.fps *= SCALE
 
-				self.snake.grow()
 				self.foods.pop(i)
+				self.snake.grow()
+				
+				self.score += 1
 			
 				if not self.is_world_full():
 					self.generate_foods()
@@ -443,9 +451,8 @@ class SnakeGame:
 		self.screen.fill(color=BG_COLOR)
 		self.draw_world()
 		
-		#score = self.font.render(f'Snake Size = {self.snake.size}\t ---- \tFPS = {FPS:.1f}', True, 'gray')
-		score = self.font.render(f'Snake Size = {self.snake.size}\t ---- \tFPS = {self.fps:.1f}', True, 'gray')
-		self.screen.blit(score, (PD, 0))
+		info = self.font.render(f'Score = {self.score}\t ---- \tFPS = {self.fps:.1f}', True, 'gray')
+		self.screen.blit(info, (PD, 0))
 
 
 		pg.display.update()
