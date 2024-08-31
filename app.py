@@ -20,9 +20,16 @@ WIDTH = WN * BLOCK_SIZE + 2*PD
 HEIGHT = HN * BLOCK_SIZE + 2*PD
 
 # snake
+# this will determine the shape of the pixels, either round or square-shaped
+# uncomment the one you desire
+SHAPE = 'square'
+#SHAPE = 'circle'
+
 INITIAL_SIZE = 4
 # the snake's head roundness, 0 to disable
-ROUNDNESS = int(BLOCK_SIZE // 2.2)
+# only when SHAPE = 'square'
+ROUNDNESS = BLOCK_SIZE
+
 
 # colors, all in tuple format, (r, g, b)
 BG_COLOR = (50, 50, 50)
@@ -232,27 +239,35 @@ def calc_border_radiuses(direction: str) -> tuple[int, int, int, int]:
 def update_world(world: list[list[Block]], snake: Snake, foods: list[Position]) -> None:
 	for r in range(HN):
 		for c in range(WN):
+			# calculating the coordinates of each pixel/block
 			left = c * BLOCK_SIZE + PD
 			top = r * BLOCK_SIZE + PD
+
+			coordinate = (c, r)
 			# this seems backwards but is actually the right way
 			# because r, which is rows, goes up and down -> y coordinate
 			# and c, which is cols, goes right and left -> x coordinate
-			coordinate = (c, r)
+
+			if SHAPE == 'circle':
+				radiuses = tuple([BLOCK_SIZE for _ in range(4)])
+			elif SHAPE == 'square':
+						radiuses = tuple([0 for _ in range(4)])
 			if snake.hit_position(pos=coordinate):
-				# neat trick to use eat_food method to check collision with head
+				# neat trick to use ate_food method to check collision with head
 				if snake.ate_food(coordinate):
 					# the snake's head, only if want different color for the head
 					# rounding the head based on the direction of snake
-					radiuses = calc_border_radiuses(direction=snake.direction)
+					if SHAPE == 'square':
+						radiuses = calc_border_radiuses(direction=snake.direction)
 					world[r][c] = Block(left=left, top=top, color=SNAKE_HEAD_COLOR, kind='head', border_radius=radiuses)
-				else:
-					world[r][c] = Block(left=left, top=top, color=SNAKE_COLOR, kind='snake')
+				else: # snake body parts except the head
+
+					world[r][c] = Block(left=left, top=top, color=SNAKE_COLOR, kind='snake', border_radius=radiuses)
 
 			elif coordinate in foods:
-				world[r][c] = Block(left=left, top=top, color=FOOD_COLOR, kind='food')
+				world[r][c] = Block(left=left, top=top, color=FOOD_COLOR, kind='food', border_radius=radiuses)
 
-			# just the empty world block
-			else:
+			else: # just the empty world block
 				world[r][c] = Block(left=left, top=top, color=BOX_COLOR, border=1, kind='blank')
 
 
