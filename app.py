@@ -218,220 +218,249 @@ class Block:
 		return self.kind[0]
 
 
-def calc_border_radiuses(direction: str) -> tuple[int, int, int, int]:
-	tr = tl = br = bl = 0
-	if direction == 'u':
-		tr = tl = ROUNDNESS
-	elif direction == 'd':
-		br = bl = ROUNDNESS
-	elif direction == 'r':
-		tr = br = ROUNDNESS
-	elif direction == 'l':
-		tl = bl = ROUNDNESS
+class SnakeGame:
+	def __init__(self) -> None:
+		pg.init()
+		self.screen = pg.display.set_mode((WIDTH, HEIGHT))
+		pg.display.set_caption('Snake Game')
+		self.clock = pg.time.Clock()
 
-	return (tl, tr, br, bl)
+		self.font = pg.font.Font(FONT_FILE, FONT_SIZE)
+		self.score = self.font.render('', True, 'white')
 
+		self.world: list[list[Block]] = [
+			[None for col in range(WN)] for row in range(HN)
+		]
 
-def update_world(world: list[list[Block]], snake: Snake, foods: list[Position]) -> None:
-	for r in range(HN):
-		for c in range(WN):
-			# calculating the coordinates of each pixel/block
-			left = c * BLOCK_SIZE + PD
-			top = r * BLOCK_SIZE + PD
-
-			coordinate = (c, r)
-			# this seems backwards but is actually the right way
-			# because r, which is rows, goes up and down -> y coordinate
-			# and c, which is cols, goes right and left -> x coordinate
-
-			if SHAPE == 'circle':
-				radiuses = tuple([BLOCK_SIZE for _ in range(4)])
-			elif SHAPE == 'square':
-						radiuses = tuple([0 for _ in range(4)])
-			if snake.hit_position(pos=coordinate):
-				# neat trick to use ate_food method to check collision with head
-				if snake.ate_food(coordinate):
-					# the snake's head, only if want different color for the head
-					# rounding the head based on the direction of snake
-					if SHAPE == 'square':
-						radiuses = calc_border_radiuses(direction=snake.direction)
-					world[r][c] = Block(left=left, top=top, color=SNAKE_HEAD_COLOR, kind='head', border_radius=radiuses)
-				else: # snake body parts except the head
-
-					world[r][c] = Block(left=left, top=top, color=SNAKE_COLOR, kind='snake', border_radius=radiuses)
-
-			elif coordinate in foods:
-				world[r][c] = Block(left=left, top=top, color=FOOD_COLOR, kind='food', border_radius=radiuses)
-
-			else: # just the empty world block
-				world[r][c] = Block(left=left, top=top, color=BOX_COLOR, border=1, kind='blank')
+		self.fps = FPS
+		self.game_over = False
+		self.snake = Snake(init_size=INITIAL_SIZE)
+		self.foods: list[Position] = []
+		self.num_foods = NUM_FOODS
+		self.generate_foods()
+		self.update_world()
 
 
-def draw_world(screen: pg.surface, world: list[list[Block]]) -> None:
-	for r in range(HN):
-		for c in range(WN):
-			block = world[r][c].block
-			block_color = world[r][c].color
-			border = world[r][c].border
-			radiuses = world[r][c].border_radius
+	def calc_border_radiuses(self) -> tuple[int, int, int, int]:
+		direction = self.snake.direction
 
-			pg.draw.rect(
-				screen,
-				color=block_color,
-				rect=block,
-				width=border,
-				border_top_left_radius=radiuses[0],
-				border_top_right_radius=radiuses[1],
-				border_bottom_right_radius=radiuses[2],
-				border_bottom_left_radius=radiuses[3]
-			)
+		tr = tl = br = bl = 0
+		if direction == 'u':
+			tr = tl = ROUNDNESS
+		elif direction == 'd':
+			br = bl = ROUNDNESS
+		elif direction == 'r':
+			tr = br = ROUNDNESS
+		elif direction == 'l':
+			tl = bl = ROUNDNESS
+
+		return (tl, tr, br, bl)
 
 
-def hit_wall(snake: Snake) -> bool:
-	outofbound = (snake.head.x < 0 or snake.head.x >= WN) or (snake.head.y < 0 or snake.head.y >= HN)
+	def update_world(self) -> None:
+		for r in range(HN):
+			for c in range(WN):
+				# calculating the coordinates of each pixel/block
+				left = c * BLOCK_SIZE + PD
+				top = r * BLOCK_SIZE + PD
 
-	return outofbound
+				coordinate = (c, r)
+				# this seems backwards but is actually the right way
+				# because r, which is rows, goes up and down -> y coordinate
+				# and c, which is cols, goes right and left -> x coordinate
+
+				if SHAPE == 'circle':
+					radiuses = tuple([BLOCK_SIZE for _ in range(4)])
+				elif SHAPE == 'square':
+					radiuses = tuple([0 for _ in range(4)])
+
+				if self.snake.hit_position(pos=coordinate):
+					# neat trick to use ate_food method to check collision with head
+					if self.snake.ate_food(coordinate):
+						# the snake's head, only if want different color for the head
+						# rounding the head based on the direction of snake
+						if SHAPE == 'square':
+							radiuses = self.calc_border_radiuses()
+						self.world[r][c] = Block(left=left, top=top, color=SNAKE_HEAD_COLOR, kind='head', border_radius=radiuses)
+					else: # snake body parts except the head
+
+						self.world[r][c] = Block(left=left, top=top, color=SNAKE_COLOR, kind='snake', border_radius=radiuses)
+
+				elif coordinate in self.foods:
+					self.world[r][c] = Block(left=left, top=top, color=FOOD_COLOR, kind='food', border_radius=radiuses)
+
+				else: # just the empty world block
+					self.world[r][c] = Block(left=left, top=top, color=BOX_COLOR, border=1, kind='blank')
 
 
-def generate_foods(foods: list[Position], snake: Snake, n: int = NUM_FOODS) -> None:
-	while True:
-		if len(foods) >= n: break
+	def draw_world(self) -> None:
+		for r in range(HN):
+			for c in range(WN):
+				block = self.world[r][c].block
+				block_color = self.world[r][c].color
+				border = self.world[r][c].border
+				radiuses = self.world[r][c].border_radius
 
-		x, y = randint(0, WN-1), randint(0, HN-1)
-		p = Position(x, y)
-
-		# this coordinate should not collide with other foods or the snake
-		if snake.hit_position(pos=p) or (p in foods): continue
-
-		foods.append(p)
-
-
-def is_world_full(world: list[list[Block]]) -> bool:
-	for row in world:
-		for blk in row:
-			if blk.kind == 'blank':
-				return False
-	return True
-
-
-def is_world_snaked(world: list[list[Block]]) -> bool:
-	for row in world:
-		for blk in row:
-			if blk.kind not in ['head', 'snake']:
-				return False
-
-	return True
+				pg.draw.rect(
+					self.screen,
+					color=block_color,
+					rect=block,
+					width=border,
+					border_top_left_radius=radiuses[0],
+					border_top_right_radius=radiuses[1],
+					border_bottom_right_radius=radiuses[2],
+					border_bottom_left_radius=radiuses[3]
+				)
+		
+		# to draw the walls
+		# to make the blocks near the edge of the wall the correct size
+		adj = PD//10
+		pg.draw.rect(
+			self.screen,
+			color=WALL_COLOR,
+			width=5,
+			rect=(PD-adj, PD-adj, WIDTH - 2*PD + 2*adj, HEIGHT - 2*PD + 2*adj) # very nasty!
+		)
 
 
-def messg_on_game_over(screen, messg: str, color = 'white') -> None:
-	pg.time.delay(1000)
-	while True:
+	def hit_wall(self) -> bool:
+		out_of_x = (self.snake.head.x < 0 or self.snake.head.x >= WN)
+		out_of_y = (self.snake.head.y < 0 or self.snake.head.y >= HN)
+
+		return (out_of_x or out_of_y)
+
+
+	def generate_foods(self) -> None:
+		while True:
+			if len(self.foods) >= self.num_foods: break
+
+			x, y = randint(0, WN-1), randint(0, HN-1)
+			p = Position(x, y)
+
+			# this coordinate should not collide with other foods or the snake
+			if self.snake.hit_position(pos=p) or (p in self.foods): continue
+
+			self.foods.append(p)
+
+
+	def is_world_full(self) -> bool:
+		# check to see if there are any blank blocks in the world
+		for row in self.world:
+			for blk in row:
+				if blk.kind == 'blank':
+					return False
+		return True
+
+
+	def is_world_snaked(self) -> bool:
+		# best function name does not exist:
+		for row in self.world:
+			for blk in row:
+				if blk.kind not in ['head', 'snake']:
+					return False
+
+		return True
+
+
+	def messg_on_game_over(self, messg: str, color = 'white') -> None:
+		pg.time.delay(1000)
+		while True:
+			for event in pg.event.get():
+				if event.type == pg.QUIT:
+					return
+				if event.type == pg.KEYDOWN:
+					if event.key in  [pg.K_RETURN, pg.K_KP_ENTER]:
+						return
+
+
+			font = pg.font.Font(FONT_FILE, int(FONT_SIZE*1.8))
+			text = font.render(messg, True, color)
+
+			self.screen.fill(BG_COLOR)
+			self.screen.blit(text, (WIDTH//2 - text.get_width()//2, HEIGHT//3))
+			pg.display.update()
+
+
+	def step(self) -> bool:
+		# 1. get user input
+		# event loop
 		for event in pg.event.get():
 			if event.type == pg.QUIT:
-				return
-			if event.type == pg.KEYDOWN:
-				if event.key in  [pg.K_RETURN, pg.K_KP_ENTER]:
-					return
+				pg.quit()
+				sys.exit()
+			
+			elif event.type == pg.KEYDOWN:
+				if event.key == pg.K_UP:
+					self.snake.turn('u')
+				elif event.key == pg.K_DOWN:
+					self.snake.turn('d')
+				elif event.key == pg.K_LEFT:
+					self.snake.turn('l')
+				elif event.key == pg.K_RIGHT:
+					self.snake.turn('r')
+
+				if event.key == pg.K_KP_PLUS:
+					if self.fps + 1 <= 25:
+						self.fps += 1
+				elif event.key == pg.K_KP_MINUS:
+					if self.fps - 1 > 0:
+						self.fps -= 1
+				break
+
+		# 2. snake moves
+		self.snake.move()
+
+		# 3. snake grows if ate any food
+		for i, food in enumerate(self.foods):
+			if self.snake.ate_food(food_pos=food):
+				if INCREMENT_SPEED: self.fps *= SCALE
+
+				self.snake.grow()
+				self.foods.pop(i)
+			
+				if not self.is_world_full():
+					self.generate_foods()
+
+				# if snake ate a food, no need to continue this loop
+				break
+
+		
+		# 4. check collisions
+		if self.snake.hit_self() or self.hit_wall():
+			self.game_over = True
+			self.messg_on_game_over(messg='Game Over!', color='#ffcccc')
+
+		# 5. update the world
+		self.update_world()
+
+		# 6. check if the player won the game?!
+		if self.is_world_snaked():
+			# this will probably never happen in a real game!
+			self.game_over = True # good game over!
+			self.messg_on_game_over(messg='Well congrats! You won the snake game!')
+
+		# 7. draw the whole game world and the score
+		self.screen.fill(color=BG_COLOR)
+		self.draw_world()
+		
+		#score = self.font.render(f'Snake Size = {self.snake.size}\t ---- \tFPS = {FPS:.1f}', True, 'gray')
+		score = self.font.render(f'Snake Size = {self.snake.size}\t ---- \tFPS = {self.fps:.1f}', True, 'gray')
+		self.screen.blit(score, (PD, 0))
 
 
-		font = pg.font.Font(FONT_FILE, int(FONT_SIZE*1.8))
-		text = font.render(messg, True, color)
-
-		screen.fill(BG_COLOR)
-		screen.blit(text, (WIDTH//2 - text.get_width()//2, HEIGHT//3))
 		pg.display.update()
+		self.clock.tick(self.fps)
+
+		return self.game_over
 
 
-pg.init()
-screen = pg.display.set_mode((WIDTH, HEIGHT))
-pg.display.set_caption('Snake Game')
-clock = pg.time.Clock()
+if __name__ == '__main__':
+	game: SnakeGame = SnakeGame()
+	
+	while True:
+		game_over = game.step()
 
-font = pg.font.Font(FONT_FILE, FONT_SIZE)
-score = font.render('', True, 'white')
-#score_rect = score.get_rect(center=(PD, PD//2.2))
+		if game_over: break
 
-world: list[list[Block]] = [
-	[None for col in range(WN)] for row in range(HN)
-]
-
-snake = Snake(init_size=INITIAL_SIZE)
-
-foods: list[Position] = []
-generate_foods(foods=foods, snake=snake)
-
-update_world(world=world, snake=snake, foods=foods)
-
-game_over = False
-while not game_over:
-	for event in pg.event.get():
-		if event.type == pg.QUIT:
-			game_over = True
-		elif event.type == pg.KEYDOWN:
-			if event.key == pg.K_UP:
-				snake.turn('u')
-			elif event.key == pg.K_DOWN:
-				snake.turn('d')
-			elif event.key == pg.K_LEFT:
-				snake.turn('l')
-			elif event.key == pg.K_RIGHT:
-				snake.turn('r')
-
-			if event.key == pg.K_KP_PLUS:
-				if FPS + 1 <= 32:
-					FPS += 1
-			elif event.key == pg.K_KP_MINUS:
-				if FPS - 1 > 0:
-					FPS -= 1
-			break
-
-	snake.move()
-
-	for i, food in enumerate(foods):
-		if snake.ate_food(food_pos=food):
-			if INCREMENT_SPEED: FPS *= SCALE
-
-			snake.grow()
-			foods.pop(i)
-			if not is_world_full(world=world):
-				generate_foods(foods=foods, snake=snake)
-
-			break
-
-
-	if snake.hit_self() or hit_wall(snake):
-		game_over = True
-		messg_on_game_over(screen, messg='Game Over!')
-
-
-	update_world(world=world, snake=snake, foods=foods)
-
-	if is_world_snaked(world=world):
-		game_over = True
-		messg_on_game_over(screen, messg='Well congrats! You won the snake game!')
-
-
-
-	screen.fill(color=BG_COLOR)
-	draw_world(screen, world)
-
-	# to make the blocks near the edge of the wall the correct size
-	adj = PD//10
-	# the walls
-	pg.draw.rect(
-		screen,
-		color=WALL_COLOR,
-		width=6,
-		rect=(PD-adj, PD-adj, WIDTH - 2*PD + 2*adj, HEIGHT - 2*PD + 2*adj) # very nasty!
-	)
-
-	score = font.render(f'Snake Size = {snake.size}\t ---- \tFPS = {FPS:.1f}', True, 'gray')
-	#screen.blit(score, score_rect)
-	screen.blit(score, (PD, 0))
-
-	pg.display.update()
-
-	clock.tick(FPS)
-
-pg.quit()
-sys.exit()
+	pg.quit()
+	sys.exit()
