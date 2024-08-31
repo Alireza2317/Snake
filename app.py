@@ -58,6 +58,9 @@ if FPS > 25:
 
 
 class Position:
+	"""
+	Position class that acts as coordinates in a 2d plane
+	"""
 	def __init__(self, x: int, y: int) -> None:
 		self.x = x
 		self.y = y
@@ -89,6 +92,9 @@ class Position:
 
 
 class Snake:
+	"""
+	Snake class that handles all the logic of a snake
+	"""
 	def __init__(self, init_size: int = 3) -> None:
 		self.direction: str = 'r'
 
@@ -159,24 +165,20 @@ class Snake:
 		self.body.insert(0, new_head)
 
 
-	def eat_food(self, food_pos: Position | tuple) -> bool:
+	def ate_food(self, food_pos: Position | tuple) -> bool:
 		return (self.head == food_pos)
 
 
 	def hit_position(self, pos: Position | tuple) -> bool:
-		for part_pos in self.body:
-			if pos == part_pos:
+		for part in self.body:
+			if pos == part:
 				return True
 
 		return False
 
 
 	def hit_self(self) -> bool:
-		for body_part in self.body[1:]:
-			if self.head == body_part:
-				return True
-
-		return False
+		return self.head in self.body[1:]
 
 
 	def __repr__(self) -> str:
@@ -184,15 +186,19 @@ class Snake:
 
 
 class Block:
+	"""
+	Block class holds the information of each grid in the snake game
+	Contains information of the positions as well as styles
+	"""
 	def __init__(
 			self,
-			left: int,
-			top: int,
+			left: int | float,
+			top: int | float,
 			border: int = 0,
 			size: int = BLOCK_SIZE,
-			color: tuple[int, int, int, int] = (255, 255, 255, 100),
+			color: tuple[int, int, int] = (255, 255, 255),
 			kind: str = 'blank',
-			border_radius: tuple[int, int, int, int] = (0, 0, 0, 0)
+			border_radius: tuple[int, int, int, int] = (0, 0, 0, 0) # (tl, tr, br, bl)
 	) -> None:
 
 
@@ -202,7 +208,7 @@ class Block:
 		self.border_radius: tuple[int, int, int, int] = border_radius
 
 		# kind could be: 'blank', 'snake', 'head', 'food'
-		self.kind = kind
+		self.kind: str = kind
 
 
 	def __repr__(self) -> str:
@@ -212,17 +218,13 @@ class Block:
 def calc_border_radiuses(direction: str) -> tuple[int, int, int, int]:
 	tr = tl = br = bl = 0
 	if direction == 'u':
-		tr = ROUNDNESS
-		tl = ROUNDNESS
+		tr = tl = ROUNDNESS
 	elif direction == 'd':
-		br = ROUNDNESS
-		bl = ROUNDNESS
+		br = bl = ROUNDNESS
 	elif direction == 'r':
-		tr = ROUNDNESS
-		br = ROUNDNESS
+		tr = br = ROUNDNESS
 	elif direction == 'l':
-		tl = ROUNDNESS
-		bl = ROUNDNESS
+		tl = bl = ROUNDNESS
 
 	return (tl, tr, br, bl)
 
@@ -238,7 +240,7 @@ def update_world(world: list[list[Block]], snake: Snake, foods: list[Position]) 
 			coordinate = (c, r)
 			if snake.hit_position(pos=coordinate):
 				# neat trick to use eat_food method to check collision with head
-				if snake.eat_food(coordinate):
+				if snake.ate_food(coordinate):
 					# the snake's head, only if want different color for the head
 					# rounding the head based on the direction of snake
 					radiuses = calc_border_radiuses(direction=snake.direction)
@@ -376,7 +378,7 @@ while not game_over:
 	snake.move()
 
 	for i, food in enumerate(foods):
-		if snake.eat_food(food_pos=food):
+		if snake.ate_food(food_pos=food):
 			if INCREMENT_SPEED: FPS *= SCALE
 
 			snake.grow()
