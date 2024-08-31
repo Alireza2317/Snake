@@ -177,15 +177,11 @@ class Snake:
 
 
 	def hit_position(self, pos: Position | tuple) -> bool:
-		for part in self.body:
-			if pos == part:
-				return True
-
-		return False
+		return (pos in self.body)
 
 
 	def hit_self(self) -> bool:
-		return self.head in self.body[1:]
+		return (self.head in self.body[1:])
 
 
 	def __repr__(self) -> str:
@@ -299,18 +295,15 @@ def hit_wall(snake: Snake) -> bool:
 
 def generate_foods(foods: list[Position], snake: Snake, n: int = NUM_FOODS) -> None:
 	while True:
-		x = randint(0, WN-1)
-		y = randint(0, HN-1)
+		if len(foods) >= n: break
+
+		x, y = randint(0, WN-1), randint(0, HN-1)
 		p = Position(x, y)
+
 		# this coordinate should not collide with other foods or the snake
-		if snake.hit_position(pos=p):
-			continue
-		if p in foods:
-			continue
+		if snake.hit_position(pos=p) or (p in foods): continue
 
 		foods.append(p)
-		if len(foods) >= n:
-			break
 
 
 def is_world_full(world: list[list[Block]]) -> bool:
