@@ -5,22 +5,26 @@ from random import randint
 # speed
 DELAY = 150
 FPS = 1000 / DELAY
+# if set to true, will scale up the fps after eating a food
 INCREMENT_SPEED = False
-SCALE = 1.00643
+SCALE = 1.0065
 
 # dimensions
-WN: int = 32
-HN: int = 20
-BLOCK_SIZE = 40 
+WN: int = 12
+HN: int = 12
+BLOCK_SIZE = 40
+# some padding outside the walls of the game, lower values might not allow
+# the score text to have enough space!
 PD = 50
 WIDTH = WN * BLOCK_SIZE + 2*PD
-HEIGHT = HN * BLOCK_SIZE + 2*PD 
+HEIGHT = HN * BLOCK_SIZE + 2*PD
 
 # snake
-INITIAL_SIZE = 2
+INITIAL_SIZE = 4
+# the snake's head roundness, 0 to disable
 ROUNDNESS = int(BLOCK_SIZE // 2.2)
 
-# colors, all in tuple format, (r, g, b, [a]), optinal alpha
+# colors, all in tuple format, (r, g, b)
 BG_COLOR = (50, 50, 50)
 SNAKE_HEAD_COLOR = (232, 200, 19)
 SNAKE_COLOR = (4, 188, 136)
@@ -33,12 +37,16 @@ FONT_FILE = 'font.ttf'
 FONT_SIZE = 22
 
 # foods
+# this will be the number of foods that will always be in the game map
 NUM_FOODS = 1
 
+# checking some parameters, to make the game more well-behaved
 if NUM_FOODS >= WN * HN:
 	raise ValueError(f'Number of foods should be less than {WN*HN}')
 if DELAY <= 0 or FPS <= 0:
 	raise ValueError('Delay and FPS should be positive numbers!')
+if INITIAL_SIZE >= WN-1:
+	raise ValueError('Snake\'s INITIAL_SIZE is too high!')
 
 # comment this if your screen is big enough
 if WIDTH > 1920 or HEIGHT > 1080:
@@ -46,7 +54,7 @@ if WIDTH > 1920 or HEIGHT > 1080:
 
 # comment this if you wanna get dizzy :)
 if FPS > 25:
-	raise ValueError('Consider using a higher value for DELAY. Or lower the FPS')
+	raise ValueError('Consider using a higher value for DELAY. Or lower the FPS.')
 
 
 class Position:
@@ -58,15 +66,15 @@ class Position:
 	def __eq__(self, other: tuple | object) -> bool:
 		if isinstance(other, tuple):
 			return self.astuple == other
-		
+
 		elif isinstance(other, Position):
 			return ((self.x == other.x) and (self.y == other.y))
-	
 
-	def __ne__(self, other) -> bool:
+
+	def __ne__(self, other: tuple | object) -> bool:
 		if isinstance(other, tuple):
 			return self.astuple != other
-		
+
 		elif isinstance(other, Position):
 			return ((self.x != other.x) or (self.y != other.y))
 
@@ -83,7 +91,7 @@ class Position:
 class Snake:
 	def __init__(self, init_size: int = 3) -> None:
 		self.direction: str = 'r'
-		
+
 		# first element will be the head
 		self.body: list[Position] = [
 			Position(i-1, 0)
@@ -93,7 +101,7 @@ class Snake:
 		# useful when growing the snake
 		self._left_over: Position = self.body[-1]
 
-	
+
 	@property
 	def size(self):
 		return len(self.body)
@@ -108,22 +116,22 @@ class Snake:
 		if self.direction == 'u':
 			if dir_to_turn == 'd':
 				return
-			
+
 		elif self.direction == 'd':
 			if dir_to_turn == 'u':
 				return
-			
+
 		elif self.direction == 'r':
 			if dir_to_turn == 'l':
 				return
-			
+
 		elif self.direction == 'l':
 			if dir_to_turn == 'r':
 				return
-		
+
 		self.direction = dir_to_turn
 
-	
+
 	def grow(self) -> None:
 		self.body.append(self._left_over)
 
@@ -131,10 +139,10 @@ class Snake:
 	def move(self) -> None:
 		# find out the new position of the head
 		new_head = Position(*self.head.astuple)
-				
+
 		# remove the last body part and save it
 		self._left_over = self.body.pop()
-		
+
 
 		match self.direction:
 			case 'r':
@@ -145,15 +153,15 @@ class Snake:
 				new_head.y += 1
 			case 'u':
 				new_head.y -= 1
-		
-		
+
+
 		# all except the first and the last Position (head and tail)
 		self.body.insert(0, new_head)
 
-		
+
 	def eat_food(self, food_pos: Position | tuple) -> bool:
 		return (self.head == food_pos)
-	
+
 
 	def hit_position(self, pos: Position | tuple) -> bool:
 		for part_pos in self.body:
@@ -162,14 +170,14 @@ class Snake:
 
 		return False
 
-	
+
 	def hit_self(self) -> bool:
 		for body_part in self.body[1:]:
 			if self.head == body_part:
 				return True
-		
+
 		return False
-	
+
 
 	def __repr__(self) -> str:
 		return str(self.body)
@@ -177,26 +185,26 @@ class Snake:
 
 class Block:
 	def __init__(
-			self, 
-			left: int, 
+			self,
+			left: int,
 			top: int,
 			border: int = 0,
-			size: int = BLOCK_SIZE, 
+			size: int = BLOCK_SIZE,
 			color: tuple[int, int, int, int] = (255, 255, 255, 100),
 			kind: str = 'blank',
 			border_radius: tuple[int, int, int, int] = (0, 0, 0, 0)
 	) -> None:
-		
-		
+
+
 		self.block: pg.Rect = pg.Rect((left, top), (size, size))
 		self.color: pg.Color = pg.Color(*color)
 		self.border: int = border
 		self.border_radius: tuple[int, int, int, int] = border_radius
-		
+
 		# kind could be: 'blank', 'snake', 'head', 'food'
 		self.kind = kind
 
-	
+
 	def __repr__(self) -> str:
 		return self.kind[0]
 
@@ -211,11 +219,11 @@ def calc_border_radiuses(direction: str) -> tuple[int, int, int, int]:
 		bl = ROUNDNESS
 	elif direction == 'r':
 		tr = ROUNDNESS
-		br = ROUNDNESS		
+		br = ROUNDNESS
 	elif direction == 'l':
 		tl = ROUNDNESS
 		bl = ROUNDNESS
-	
+
 	return (tl, tr, br, bl)
 
 
@@ -242,9 +250,9 @@ def update_world(world: list[list[Block]], snake: Snake, foods: list[Position]) 
 				world[r][c] = Block(left=left, top=top, color=FOOD_COLOR, kind='food')
 
 			# just the empty world block
-			else:	
+			else:
 				world[r][c] = Block(left=left, top=top, color=BOX_COLOR, border=1, kind='blank')
-				
+
 
 def draw_world(screen: pg.surface, world: list[list[Block]]) -> None:
 	for r in range(HN):
@@ -253,9 +261,9 @@ def draw_world(screen: pg.surface, world: list[list[Block]]) -> None:
 			block_color = world[r][c].color
 			border = world[r][c].border
 			radiuses = world[r][c].border_radius
-			pg.draw.rect(screen, 
-				color=block_color, 
-				rect=block, 
+			pg.draw.rect(screen,
+				color=block_color,
+				rect=block,
 				width=border,
 				border_top_left_radius=radiuses[0],
 				border_top_right_radius=radiuses[1],
@@ -266,7 +274,7 @@ def draw_world(screen: pg.surface, world: list[list[Block]]) -> None:
 
 def hit_wall(snake: Snake) -> bool:
 	outofbound = (snake.head.x < 0 or snake.head.x >= WN) or (snake.head.y < 0 or snake.head.y >= HN)
-	
+
 	return outofbound
 
 
@@ -280,7 +288,7 @@ def generate_foods(foods: list[Position], snake: Snake, n: int = NUM_FOODS) -> N
 			continue
 		if p in foods:
 			continue
-		
+
 		foods.append(p)
 		if len(foods) >= n:
 			break
@@ -299,7 +307,7 @@ def is_world_snaked(world: list[list[Block]]) -> bool:
 		for blk in row:
 			if blk.kind not in ['head', 'snake']:
 				return False
-	
+
 	return True
 
 
@@ -310,11 +318,13 @@ def messg_on_game_over(screen, messg: str, color = 'white') -> None:
 			if event.type == pg.QUIT:
 				return
 			if event.type == pg.KEYDOWN:
-				return
+				if event.key in  [pg.K_RETURN, pg.K_KP_ENTER]:
+					return
+
 
 		font = pg.font.Font(FONT_FILE, int(FONT_SIZE*1.8))
 		text = font.render(messg, True, color)
-		
+
 		screen.fill(BG_COLOR)
 		screen.blit(text, (WIDTH//2 - text.get_width()//2, HEIGHT//3))
 		pg.display.update()
@@ -349,12 +359,12 @@ while not game_over:
 			if event.key == pg.K_UP:
 				snake.turn('u')
 			elif event.key == pg.K_DOWN:
-				snake.turn('d')	
+				snake.turn('d')
 			elif event.key == pg.K_LEFT:
 				snake.turn('l')
 			elif event.key == pg.K_RIGHT:
 				snake.turn('r')
-			
+
 			if event.key == pg.K_KP_PLUS:
 				if FPS + 1 <= 32:
 					FPS += 1
@@ -364,35 +374,35 @@ while not game_over:
 			break
 
 	snake.move()
-	
+
 	for i, food in enumerate(foods):
 		if snake.eat_food(food_pos=food):
 			if INCREMENT_SPEED: FPS *= SCALE
-			
+
 			snake.grow()
 			foods.pop(i)
 			if not is_world_full(world=world):
 				generate_foods(foods=foods, snake=snake)
-			
+
 			break
 
-	
+
 	if snake.hit_self() or hit_wall(snake):
 		game_over = True
 		messg_on_game_over(screen, messg='Game Over!')
-		
-		
+
+
 	update_world(world=world, snake=snake, foods=foods)
-	
+
 	if is_world_snaked(world=world):
 		game_over = True
 		messg_on_game_over(screen, messg='Well congrats! You won the snake game!')
-		
 
-	
+
+
 	screen.fill(color=BG_COLOR)
 	draw_world(screen, world)
-	
+
 	# to make the blocks near the edge of the wall the correct size
 	adj = PD//10
 	# the walls
@@ -403,9 +413,9 @@ while not game_over:
 		rect=(PD-adj, PD-adj, WIDTH - 2*PD + 2*adj, HEIGHT - 2*PD + 2*adj) # very nasty!
 	)
 
-	score = font.render(f'Snake Size = {snake.size}\t\t\t\t\t FPS = {FPS:.1f}', True, 'gray')
+	score = font.render(f'Snake Size = {snake.size}\t ---- \tFPS = {FPS:.1f}', True, 'gray')
 	#screen.blit(score, score_rect)
-	screen.blit(score, (PD, PD//3.3))
+	screen.blit(score, (PD, 0))
 
 	pg.display.update()
 
