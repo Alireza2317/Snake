@@ -10,7 +10,7 @@ INCREMENT_SPEED = False
 SCALE = 1.0065
 
 # dimensions
-WN: int = 12
+WN: int = 16
 HN: int = 12
 BLOCK_SIZE = 40
 # some padding outside the walls of the game, lower values might not allow
@@ -32,16 +32,17 @@ ROUNDNESS = BLOCK_SIZE
 
 
 # colors, all in tuple format, (r, g, b)
-BG_COLOR = (50, 50, 50)
-SNAKE_HEAD_COLOR = (232, 200, 19)
-SNAKE_COLOR = (4, 188, 136)
-BOX_COLOR = (80, 80, 80)
+BG_COLOR = (35, 35, 35)
+SNAKE_HEAD_COLOR = (255, 204, 62)
+SNAKE_COLOR = (54, 110, 156)
+GRID_COLOR = (45, 45, 45)
 WALL_COLOR = (220, 220, 240)
-FOOD_COLOR = (232, 29, 73)
+FOOD_COLOR = (239, 57, 57)
 
 # fonts for texts
 FONT_FILE = 'font.ttf'
 FONT_SIZE = 22
+FONT_COLOR = (220, 220, 220)
 
 # foods
 # this will be the number of foods that will always be in the game map
@@ -302,7 +303,7 @@ class SnakeGame:
 					self.world[r][c] = Block(left=left, top=top, color=FOOD_COLOR, kind='food', border_radius=radiuses)
 
 				else: # just the empty world block
-					self.world[r][c] = Block(left=left, top=top, color=BOX_COLOR, border=1, kind='blank')
+					self.world[r][c] = Block(left=left, top=top, color=GRID_COLOR, border=1, kind='blank')
 
 
 	def draw_world(self) -> None:
@@ -374,7 +375,7 @@ class SnakeGame:
 		return True
 
 
-	def messg_on_game_over(self, messg: str, color = 'white') -> None:
+	def messg_on_game_over(self, messg: str, color = FONT_COLOR) -> None:
 		pg.time.delay(1000)
 		while True:
 			for event in pg.event.get():
@@ -457,7 +458,7 @@ class SnakeGame:
 		self.screen.fill(color=BG_COLOR)
 		self.draw_world()
 
-		info = self.font.render(f'Score = {self.score}\t ---- \tFPS = {self.fps:.1f}', True, 'gray')
+		info = self.font.render(f'Score = {self.score}\t ---- \tFPS = {self.fps:.1f}', True, FONT_COLOR)
 		self.screen.blit(info, (PD, 0))
 
 
