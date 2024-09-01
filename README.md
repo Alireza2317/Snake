@@ -59,3 +59,6 @@ Here is the default look of the game:
 
 	![7](https://github.com/user-attachments/assets/68fcf5bd-35a8-4c86-82b6-dc53c63f119f)
 
+## Thanks
+Thank you for checking this project out. Hope you enjoy playing this classic game 🙂.
+
