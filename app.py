@@ -231,21 +231,27 @@ class SnakeGame:
 		self.fps = FPS
 		self.game_over = False
 		self.num_foods = NUM_FOODS
-		
+
 		# will initialize self.world, self.snake, self.foods
 		self.reset()
 
+
 	def reset(self) -> None:
+		# reset
+		self.game_over = False
+		self.score = 0
+
 		self.world: list[list[Block]] = [
 			[None for col in range(WN)] for row in range(HN)
 		]
 
 		self.snake = Snake(init_size=INITIAL_SIZE)
-		
+
 		self.foods: list[Position] = []
 		self.generate_foods()
 
 		self.update_world()
+
 
 	def calc_border_radiuses(self) -> tuple[int, int, int, int]:
 		direction = self.snake.direction
@@ -317,7 +323,7 @@ class SnakeGame:
 					border_bottom_right_radius=radiuses[2],
 					border_bottom_left_radius=radiuses[3]
 				)
-		
+
 		# to draw the walls
 		# to make the blocks near the edge of the wall the correct size
 		adj = PD//10
@@ -394,7 +400,7 @@ class SnakeGame:
 			if event.type == pg.QUIT:
 				pg.quit()
 				sys.exit()
-			
+
 			elif event.type == pg.KEYDOWN:
 				if event.key == pg.K_UP:
 					self.snake.turn('u')
@@ -423,16 +429,16 @@ class SnakeGame:
 
 				self.foods.pop(i)
 				self.snake.grow()
-				
+
 				self.score += 1
-			
+
 				if not self.is_world_full():
 					self.generate_foods()
 
 				# if snake ate a food, no need to continue this loop
 				break
 
-		
+
 		# 4. check collisions
 		if self.snake.hit_self() or self.hit_wall():
 			self.game_over = True
@@ -450,7 +456,7 @@ class SnakeGame:
 		# 7. draw the whole game world and the score
 		self.screen.fill(color=BG_COLOR)
 		self.draw_world()
-		
+
 		info = self.font.render(f'Score = {self.score}\t ---- \tFPS = {self.fps:.1f}', True, 'gray')
 		self.screen.blit(info, (PD, 0))
 
@@ -463,11 +469,12 @@ class SnakeGame:
 
 if __name__ == '__main__':
 	game: SnakeGame = SnakeGame()
-	
+
 	while True:
 		game_over = game.step()
 
-		if game_over: break
+		if game_over:
+			break
 
 	pg.quit()
 	sys.exit()
