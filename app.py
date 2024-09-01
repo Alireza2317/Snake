@@ -2,9 +2,8 @@ import sys
 import pygame as pg
 from random import randint
 
-# speed
-DELAY = 150
-FPS = 1000 / DELAY
+# speed. the higher the fps, the faster the game
+FPS = 7
 # if set to true, will scale up the fps after eating a food
 INCREMENT_SPEED = False
 SCALE = 1.0065
@@ -51,8 +50,8 @@ NUM_FOODS = 1
 # checking some parameters, to make the game more well-behaved
 if NUM_FOODS >= WN * HN:
 	raise ValueError(f'Number of foods should be less than {WN*HN}')
-if DELAY <= 0 or FPS <= 0:
-	raise ValueError('Delay and FPS should be positive numbers!')
+if  FPS <= 0:
+	raise ValueError('FPS should be positive numbers!')
 if INITIAL_SIZE >= WN-1:
 	raise ValueError('Snake\'s INITIAL_SIZE is too high!')
 
@@ -62,7 +61,7 @@ if WIDTH > 1920 or HEIGHT > 1080:
 
 # comment this if you wanna get dizzy :)
 if FPS > 25:
-	raise ValueError('Consider using a higher value for DELAY. Or lower the FPS.')
+	raise ValueError('Consider using a lower value for FPS.')
 
 
 class Position:
@@ -443,7 +442,7 @@ class SnakeGame:
 		# 4. check collisions
 		if self.snake.hit_self() or self.hit_wall():
 			self.game_over = True
-			self.messg_on_game_over(messg='Game Over!', color='#ffcccc')
+			self.messg_on_game_over(messg='Game Over!')
 
 		# 5. update the world
 		self.update_world()
@@ -459,7 +458,7 @@ class SnakeGame:
 		self.draw_world()
 
 		info = self.font.render(f'Score = {self.score}\t ---- \tFPS = {self.fps:.1f}', True, FONT_COLOR)
-		self.screen.blit(info, (PD, 0))
+		self.screen.blit(info, (PD, int(PD/5)))
 
 
 		pg.display.update()
