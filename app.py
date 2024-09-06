@@ -3,18 +3,19 @@ import pygame as pg
 from random import randint
 
 # speed. the higher the fps, the faster the game
-FPS = 7
+FPS = 8
 # if set to true, will scale up the fps after eating a food
 INCREMENT_SPEED = False
 SCALE = 1.0065
 
 # dimensions
-WN: int = 16
-HN: int = 12
+WN: int = 20
+HN: int = 16
 BLOCK_SIZE = 40
-# some padding outside the walls of the game, lower values might not allow
-# the score text to have enough space!
+
 PD = 50
+# some padding outside the walls of the game. lower values might not allow
+# the score text to have enough space!
 WIDTH = WN * BLOCK_SIZE + 2*PD
 HEIGHT = HN * BLOCK_SIZE + 2*PD
 
