@@ -40,7 +40,6 @@ WALL_COLOR = (220, 220, 240)
 FOOD_COLOR = (239, 57, 57)
 
 # fonts for texts
-FONT_FILE = 'font.ttf'
 FONT_SIZE = 22
 FONT_COLOR = (220, 220, 220)
 
@@ -226,7 +225,7 @@ class SnakeGame:
 		pg.display.set_caption('Snake Game')
 		self.clock = pg.time.Clock()
 
-		self.font = pg.font.Font(FONT_FILE, FONT_SIZE)
+		self.font = pg.font.Font(pg.font.get_default_font(), FONT_SIZE)
 
 		self.score: int = 0
 		self.fps = FPS
@@ -386,7 +385,7 @@ class SnakeGame:
 						return
 
 
-			font = pg.font.Font(FONT_FILE, int(FONT_SIZE*1.8))
+			font = pg.font.Font(pg.font.get_default_font(), int(FONT_SIZE*1.8))
 			text = font.render(messg, True, color)
 
 			self.screen.fill(BG_COLOR)
@@ -458,7 +457,7 @@ class SnakeGame:
 		self.screen.fill(color=BG_COLOR)
 		self.draw_world()
 
-		info = self.font.render(f'Score = {self.score}\t ---- \tFPS = {self.fps:.1f}', True, FONT_COLOR)
+		info = self.font.render(f'Score = {self.score} ---- FPS = {self.fps:.1f}', True, FONT_COLOR)
 		self.screen.blit(info, (PD, int(PD/5)))
 
 
