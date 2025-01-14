@@ -80,6 +80,7 @@ class Position:
 		elif isinstance(other, Position):
 			return ((self.x == other.x) and (self.y == other.y))
 
+		return False
 
 	def __ne__(self, other: tuple | object) -> bool:
 		if isinstance(other, tuple):
@@ -88,6 +89,7 @@ class Position:
 		elif isinstance(other, Position):
 			return ((self.x != other.x) or (self.y != other.y))
 
+		return False
 
 	@property
 	def astuple(self):
@@ -126,21 +128,11 @@ class Snake:
 
 
 	def turn(self, dir_to_turn: str) -> None:
-		if self.direction == 'u':
-			if dir_to_turn == 'd':
-				return
+		if self.direction in ('u', 'd') and dir_to_turn in ('u', 'd'):
+			return
 
-		elif self.direction == 'd':
-			if dir_to_turn == 'u':
-				return
-
-		elif self.direction == 'r':
-			if dir_to_turn == 'l':
-				return
-
-		elif self.direction == 'l':
-			if dir_to_turn == 'r':
-				return
+		elif self.direction in ('r', 'l') and dir_to_turn in ('r', 'l'):
+			return
 
 		self.direction = dir_to_turn
 

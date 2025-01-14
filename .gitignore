@@ -1,3 +1,5 @@
 venv/
 pics/
 .directory
+.mypy_cache
+build/
